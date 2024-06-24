@@ -1,84 +1,52 @@
 <script>
-	/** @type {string[]} */
-	let items = [''];
+	import { tick } from 'svelte';
 
-	/** @type {string} */
-	let newItem = '';
+	let notes = [
+		{ id: 1, text: 'go to hell' },
+		{ id: 2, text: 'go to bread' },
+		{ id: 3, text: 'i want milk' },
+		{ id: 4, text: 'and other' },
+		{ id: 5, text: 'something' }
+	];
 
-	/** @type {number | null} */
-	let editingIndex = null;
-
-	function addItem() {
-		items = [...items, newItem];
-		newItem = '';
-	}
-
-	function removeItem(index) {
-		items = items.filter((_, i) => i !== index);
-	}
-
-	function finishEditing(index, event) {
-		items[index] = event.target.textContent;
-		editingIndex = null;
-	}
-
-	function isCursorAtEnd(event) {
-		const target = event.target;
-		if (!target) {
-			console.error('Target is null');
-			return false;
+	const updateNoteText = (id, newText) => {
+		const note = notes.find((note) => note.id === id);
+		if (note) {
+			note.text = newText;
 		}
+	};
 
-		const selection = window.getSelection();
-		if (!selection) {
-			console.error('Selection is null');
-			return false;
+	const newNote = async (index) => {
+		const newId = notes.length + 1;
+		const newNote = { id: newId, text: '' };
+		notes = [...notes.slice(0, index + 1), newNote, ...notes.slice(index + 1)];
+		await tick(); // Wait for DOM to update
+		const newElement = document.getElementById(newId);
+		if (newElement) {
+			newElement.focus();
 		}
-
-		if (selection.rangeCount === 0) {
-			console.error('No ranges in selection');
-			return false;
-		}
-
-		const range = selection.getRangeAt(0);
-		if (!range) {
-			console.error('Range is null');
-			return false;
-		}
-
-		const cursorPosition = range.endOffset;
-		const textLength = target.textContent ? target.textContent.length : 0;
-
-		return cursorPosition === textLength;
-	}
+	};
 </script>
 
 <div class="notion">
 	<h1>Brotion</h1>
-	<input type="text" bind:value={newItem} placeholder="Add a new item" />
 
 	<ul>
-		{#each items as item, index}
-			<li>
-				<span>🔵</span>
-				<div
-					contenteditable="true"
-					on:blur={(e) => finishEditing(index, e)}
-					on:keydown={(e) => {
-						if (e.key === 'Enter') {
-							e.preventDefault(); // Предотвращаем перенос строки
-							if (isCursorAtEnd(e)) {
-								finishEditing(index, e);
-								addItem();
-							} else {
-								console.log('dfsddfd');
-							}
-						}
-					}}
-				>
-					{item}
-				</div>
-				<!-- <button on:click={() => removeItem(index)}>Remove</button> -->
+		{#each notes as { id, text }, index (id)}
+			<li
+				{id}
+				contenteditable="true"
+				on:input={(e) => {
+					updateNoteText(id, e.target.innerText);
+				}}
+				on:keydown={async (e) => {
+					if (e.key === 'Enter') {
+						e.preventDefault();
+						await newNote(index);
+					}
+				}}
+			>
+				{text}
 			</li>
 		{/each}
 	</ul>
@@ -116,14 +84,12 @@
 		align-items: center;
 		min-width: 60px;
 	}
-
 	div {
 		font-size: 24px;
 	}
 	div[contenteditable='true'] {
 		cursor: text;
 		padding: 5px;
-
 		margin-top: 5px;
 		min-width: 60px;
 	}
