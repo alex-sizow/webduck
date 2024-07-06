@@ -1,31 +1,42 @@
 <script>
-	import { tick } from 'svelte';
+  import { tick } from 'svelte';
 
-	let notes = [
-		{ id: 1, text: 'go to hell' },
-		{ id: 2, text: 'go to bread' },
-		{ id: 3, text: 'i want milk' },
-		{ id: 4, text: 'and other' },
-		{ id: 5, text: 'something' }
-	];
+  let $state notes = [
+    { id: 1, text: 'go to hell' },
+    { id: 2, text: 'go to bread' },
+    { id: 3, text: 'i want milk' },
+    { id: 4, text: 'and other' },
+    { id: 5, text: 'something' }
+  ];
 
-	const updateNoteText = (id, newText) => {
-		const note = notes.find((note) => note.id === id);
-		if (note) {
-			note.text = newText;
-		}
-	};
+  let $state newElement = null;
 
-	const newNote = async (index) => {
-		const newId = notes.length + 1;
-		const newNote = { id: newId, text: '' };
-		notes = [...notes.slice(0, index + 1), newNote, ...notes.slice(index + 1)];
-		await tick(); // Wait for DOM to update
-		const newElement = document.getElementById(newId);
-		if (newElement) {
-			newElement.focus();
-		}
-	};
+  const updateNoteText = (id, newText) => {
+    notes = notes.map(note => 
+      note.id === id ? { ...note, text: newText } : note
+    );
+  };
+
+  const newNote = async (index) => {
+    const newId = notes.length + 1;
+    const newNoteItem = { id: newId, text: '' };
+    notes = [
+      ...notes.slice(0, index + 1),
+      newNoteItem,
+      ...notes.slice(index + 1)
+    ];
+
+    await tick();
+    if (newElement) {
+      newElement.focus();
+    }
+  };
+
+  $effect(() => {
+    if (newElement) {
+      newElement.focus();
+    }
+  });
 </script>
 
 <div class="notion">
@@ -34,6 +45,7 @@
 	<ul>
 		{#each notes as { id, text }, index (id)}
 			<li
+				bind:this={index === notes.length - 1 ? newElement : null}
 				{id}
 				contenteditable="true"
 				on:input={(e) => {
@@ -52,7 +64,7 @@
 	</ul>
 </div>
 
-<style scoped>
+<style>
 	.notion {
 		margin: 40px;
 		display: flex;
@@ -62,16 +74,6 @@
 	h1 {
 		font-size: 42px;
 		margin-bottom: 40px;
-	}
-	input {
-		margin-bottom: 10px;
-		padding: 5px;
-		font-size: 16px;
-	}
-	button {
-		margin-left: 5px;
-		padding: 5px 10px;
-		font-size: 16px;
 	}
 	ul {
 		list-style-type: none;
@@ -83,17 +85,12 @@
 		display: flex;
 		align-items: center;
 		min-width: 60px;
-	}
-	div {
 		font-size: 24px;
-	}
-	div[contenteditable='true'] {
 		cursor: text;
 		padding: 5px;
 		margin-top: 5px;
-		min-width: 60px;
 	}
-	div[contenteditable='true']:focus {
+	li:focus {
 		outline: none;
 	}
 </style>
